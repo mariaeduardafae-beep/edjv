@@ -15,6 +15,19 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/your-deployed-weba
 
 export function persistLead(lead: LeadRecord): void {
   if (typeof window === "undefined") return;
+
+  // Enviar evento para o Google Tag Manager (GTM)
+  try {
+    (window as any).dataLayer = (window as any).dataLayer || [];
+    (window as any).dataLayer.push({
+      'event': 'generate_lead',
+      'lead_outcome': lead.outcome,
+      'modality': lead.modalidade,
+      'age_band': lead.idadeLabel
+    });
+  } catch (e) {
+    console.error("Erro ao disparar evento GTM", e);
+  }
   
   const leadData = { ...lead, at: new Date().toLocaleString("pt-BR") };
 
