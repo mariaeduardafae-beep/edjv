@@ -12,9 +12,7 @@ export function buildWhatsAppUrl(
 
 Preenchi o formulário e tenho interesse na modalidade ${modalidade}, na turma de ${turma}.
 
-Telefone: ${telefone}
 Idade: ${idadeLabel}
-Localização (José Américo): ${localizacaoLabel}
 
 Gostaria de saber mais detalhes e, se possível, agendar uma aula experimental 😊`;
 
