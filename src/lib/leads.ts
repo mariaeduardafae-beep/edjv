@@ -11,7 +11,7 @@ export type LeadRecord = {
 const STORAGE_KEY = "edjv_chat_leads";
 
 // Coloque a URL gerada pelo Google Apps Script aqui entre as aspas
-const GOOGLE_SCRIPT_URL = "";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/your-deployed-webapp-id/exec"; // TODO: replace with actual Web App URL after publishing Apps Script
 
 export function persistLead(lead: LeadRecord): void {
   if (typeof window === "undefined") return;

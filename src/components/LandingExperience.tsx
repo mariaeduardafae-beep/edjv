@@ -134,10 +134,10 @@ export function LandingExperience() {
     <section className="edjv-carousel-section" aria-label="Nossos Alunos">
       <div className="edjv-carousel">
         <div className="edjv-carousel-track">
-          <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_1.jpg)` }} />
-          <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_2.jpg)` }} />
           <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_3.jpg)` }} />
-          <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_4.jpg)` }} />
+          <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_2.jpg)` }} />
+          <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_7.jpg)` }} />
+          <div className="edjv-carousel-slide" style={{ backgroundImage: `url(/gallery/carousel2_6.jpg)` }} />
         </div>
       </div>
     </section>
@@ -212,6 +212,9 @@ export function LandingExperience() {
         <div className="edjv-gallery-grid">
           <div className="edjv-gallery-item" style={{ backgroundImage: `url(/gallery/foto_8b9a6a5c.jpg)` }} />
           <div className="edjv-gallery-item" style={{ backgroundImage: `url(/gallery/foto_d9beabbd.jpg)` }} />
+          <div className="edjv-gallery-item" style={{ height: "auto", background: "none", padding: 0, boxShadow: "0 10px 30px rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.16)", borderRadius: "18px", overflow: "hidden" }}>
+            <img src="/gallery/carousel2_5.jpg" alt="Momentos EDJV" style={{ width: "100%", height: "auto", display: "block" }} />
+          </div>
         </div>
       </div>
     </section>
