@@ -16,12 +16,12 @@ type Message = {
 };
 
 type Step =
-  | { type: "age" }
-  | { type: "modality"; band: AgeBand; ageLabel: string }
-  | { type: "schedule"; band: AgeBand; ageLabel: string; modalityKey: ModalityKey; modalityLabel: string }
-  | { type: "contact"; ageLabel: string; modalityLabel: string; turma: string }
-  | { type: "location"; ageLabel: string; modalityLabel: string; turma: string; nome: string; telefone: string }
-  | { type: "done"; title: string; body: string; whatsappUrl?: string };
+  | { type: "name" }
+  | { type: "age"; nome: string }
+  | { type: "modality"; nome: string; band: AgeBand; ageLabel: string }
+  | { type: "schedule"; nome: string; band: AgeBand; ageLabel: string; modalityKey: ModalityKey; modalityLabel: string }
+  | { type: "location"; nome: string; band: AgeBand; ageLabel: string; modalityKey: ModalityKey; modalityLabel: string; turma: string }
+  | { type: "done"; title: string; body: string; whatsappUrl?: string; lastStep?: Step };
 
 export type EnrollmentChatProps = {
   isOpen: boolean;
@@ -31,9 +31,8 @@ export type EnrollmentChatProps = {
 export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [step, setStep] = useState<Step>({ type: "age" });
+  const [step, setStep] = useState<Step>({ type: "name" });
   const [nomeDraft, setNomeDraft] = useState("");
-  const [telefoneDraft, setTelefoneDraft] = useState("");
   const [contactError, setContactError] = useState("");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -53,9 +52,8 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
     
     // Reset chat
     setMessages([]);
-    setStep({ type: "age" });
+    setStep({ type: "name" });
     setNomeDraft("");
-    setTelefoneDraft("");
     setContactError("");
     
     // Initial bot message
@@ -71,7 +69,7 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
         setMessages(prev => [...prev, {
           id: "m2",
           sender: "bot",
-          text: "Para começar, qual a idade do aluno(a)?"
+          text: "Para começar, como podemos te chamar?"
         }]);
         setIsTyping(false);
       }, 1000);
@@ -98,9 +96,21 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
     }]);
   };
 
-  const handleAgeSelect = (o: typeof AGE_OPTIONS[0]) => {
+  const handleNameSubmit = () => {
+    const n = nomeDraft.trim();
+    if (n.length < 2) {
+      setContactError("Informe seu nome.");
+      return;
+    }
+    addUserMessage(n);
+    setStep({ type: "age", nome: n });
+    setContactError("");
+    addBotMessage(`Prazer, ${n}! Qual a idade do aluno(a)?`);
+  };
+
+  const handleAgeSelect = (o: typeof AGE_OPTIONS[0], currentStep: any) => {
     addUserMessage(o.label);
-    setStep({ type: "modality", band: o.id, ageLabel: o.label });
+    setStep({ type: "modality", nome: currentStep.nome, band: o.id, ageLabel: o.label });
     addBotMessage(`Legal! Para a faixa de ${o.label}, temos essas modalidades. Qual você tem interesse?`);
   };
 
@@ -108,6 +118,7 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
     addUserMessage(m.label);
     setStep({ 
       type: "schedule", 
+      nome: currentStep.nome,
       band: currentStep.band, 
       ageLabel: currentStep.ageLabel, 
       modalityKey: m.key, 
@@ -119,44 +130,52 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
   const handleScheduleSelect = (label: string, currentStep: any) => {
     addUserMessage(label);
     setStep({
-      type: "contact",
+      type: "location",
+      nome: currentStep.nome,
+      band: currentStep.band,
       ageLabel: currentStep.ageLabel,
+      modalityKey: currentStep.modalityKey,
       modalityLabel: currentStep.modalityLabel,
       turma: label,
-    });
-    addBotMessage("Quase lá! Como podemos te chamar? E qual o seu WhatsApp?");
-  };
-
-  const handleContactSubmit = (currentStep: any) => {
-    const n = nomeDraft.trim();
-    if (n.length < 2) {
-      setContactError("Informe seu nome.");
-      return;
-    }
-    if (telefoneDraft.length < 8) {
-      setContactError("Informe um telefone válido.");
-      return;
-    }
-    
-    addUserMessage(`${n} - ${telefoneDraft}`);
-    setStep({
-      type: "location",
-      ageLabel: currentStep.ageLabel,
-      modalityLabel: currentStep.modalityLabel,
-      turma: currentStep.turma,
-      nome: n,
-      telefone: telefoneDraft,
     });
     addBotMessage("Uma última pergunta: as nossas aulas acontecem no bairro José Américo. Esse trajeto é tranquilo para você?");
   };
 
-  const handleLocationSelect = (choice: "sim" | "depende" | "nao", currentStep: any) => {
-    const locLabel = choice === "sim" ? "Sim" : choice === "depende" ? "Depende" : "Não";
+  const handleBack = (currentStep: Step) => {
+    if (currentStep.type === "age") {
+      setStep({ type: "name" });
+      addBotMessage("Sem problemas! Como podemos te chamar?");
+    } else if (currentStep.type === "modality") {
+      setStep({ type: "age", nome: currentStep.nome });
+      addBotMessage(`Certo, ${currentStep.nome}! Qual a idade do aluno(a)?`);
+    } else if (currentStep.type === "schedule") {
+      setStep({ type: "modality", nome: currentStep.nome, band: currentStep.band, ageLabel: currentStep.ageLabel });
+      addBotMessage(`Voltamos para as modalidades de ${currentStep.ageLabel}. Qual você prefere?`);
+    } else if (currentStep.type === "location") {
+      setStep({ 
+        type: "schedule", 
+        nome: currentStep.nome,
+        band: currentStep.band, 
+        ageLabel: currentStep.ageLabel, 
+        modalityKey: currentStep.modalityKey, 
+        modalityLabel: currentStep.modalityLabel 
+      });
+      addBotMessage(`Escolha um horário para ${currentStep.modalityLabel}:`);
+    } else if (currentStep.type === "done" && currentStep.lastStep) {
+      setStep(currentStep.lastStep);
+      if (currentStep.lastStep.type === "location") {
+        addBotMessage("Voltamos! Sobre o trajeto para o bairro José Américo, ele é tranquilo para você?");
+      }
+    }
+  };
+
+  const handleLocationSelect = (choice: "sim" | "nao", currentStep: any) => {
+    const locLabel = choice === "sim" ? "Sim, com certeza!" : "Infelizmente não consigo";
     addUserMessage(locLabel);
     
     const lead: LeadRecord = {
       nome: currentStep.nome,
-      telefone: currentStep.telefone,
+      telefone: "Não solicitado",
       idadeLabel: currentStep.ageLabel,
       modalidade: currentStep.modalityLabel,
       turma: currentStep.turma,
@@ -171,23 +190,27 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
         currentStep.nome,
         currentStep.modalityLabel,
         currentStep.turma,
-        currentStep.telefone,
+        "Não informado",
         currentStep.ageLabel,
         locLabel,
       );
-      addBotMessage("Perfeito! Clique no botão abaixo para abrir o WhatsApp e finalizar seu agendamento.");
+
+      addBotMessage("Perfeito! Seus dados foram registrados. Clique no botão abaixo para nos enviar as informações pelo WhatsApp e finalizar seu agendamento.");
+      
       setStep({ 
         type: "done", 
         title: "Tudo pronto!", 
         body: "Clique abaixo para falar conosco.",
-        whatsappUrl: url 
+        whatsappUrl: url,
+        lastStep: currentStep
       });
     } else {
-      addBotMessage("Entendido! Recebemos suas informações e entraremos em contato em breve para tirar suas dúvidas.");
+      addBotMessage("Que pena! Talvez no futuro seja possível? Ficaremos na torcida para você conseguir vir dançar conosco.");
       setStep({ 
         type: "done", 
-        title: "Obrigado!", 
-        body: "Nossa equipe entrará em contato em breve." 
+        title: "Ficamos à disposição!", 
+        body: "Caso mude de ideia, estaremos aqui!",
+        lastStep: currentStep
       });
     }
   };
@@ -225,13 +248,32 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
         </div>
 
         <footer className="edjv-chat-footer">
+          {step.type === "name" && !isTyping && (
+            <div className="edjv-chat-input-group">
+              <input 
+                className="edjv-chat-field" 
+                placeholder="Seu nome" 
+                value={nomeDraft} 
+                onChange={e => setNomeDraft(e.target.value)} 
+                onKeyDown={e => e.key === 'Enter' && handleNameSubmit()}
+              />
+              {contactError && <p style={{ color: '#ff4d4d', fontSize: '0.8rem', margin: 0 }}>{contactError}</p>}
+              <button className="edjv-chat-btn-send" onClick={handleNameSubmit}>
+                Continuar
+              </button>
+            </div>
+          )}
+
           {step.type === "age" && !isTyping && (
             <div className="edjv-chat-options-grid">
               {AGE_OPTIONS.map(o => (
-                <button key={o.id} className="edjv-chat-btn-option" onClick={() => handleAgeSelect(o)}>
+                <button key={o.id} className="edjv-chat-btn-option" onClick={() => handleAgeSelect(o, step)}>
                   {o.label}
                 </button>
               ))}
+              <button className="edjv-chat-btn-back" onClick={() => handleBack(step)}>
+                &larr; Voltar
+              </button>
             </div>
           )}
 
@@ -242,6 +284,9 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
                   {m.label}
                 </button>
               ))}
+              <button className="edjv-chat-btn-back" onClick={() => handleBack(step)}>
+                &larr; Voltar
+              </button>
             </div>
           )}
 
@@ -252,36 +297,21 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
                   {label}
                 </button>
               ))}
-            </div>
-          )}
-
-          {step.type === "contact" && !isTyping && (
-            <div className="edjv-chat-input-group">
-              <input 
-                className="edjv-chat-field" 
-                placeholder="Seu nome" 
-                value={nomeDraft} 
-                onChange={e => setNomeDraft(e.target.value)} 
-              />
-              <input 
-                className="edjv-chat-field" 
-                placeholder="WhatsApp (DDD + número)" 
-                value={telefoneDraft} 
-                onChange={e => setTelefoneDraft(e.target.value)} 
-                type="tel"
-              />
-              {contactError && <p style={{ color: '#ff4d4d', fontSize: '0.8rem', margin: 0 }}>{contactError}</p>}
-              <button className="edjv-chat-btn-send" onClick={() => handleContactSubmit(step)}>
-                Enviar Contato
+              <button className="edjv-chat-btn-back" onClick={() => handleBack(step)}>
+                &larr; Voltar
               </button>
             </div>
           )}
 
+
+
           {step.type === "location" && !isTyping && (
             <div className="edjv-chat-options-grid">
               <button className="edjv-chat-btn-option" onClick={() => handleLocationSelect("sim", step)}>Sim, com certeza!</button>
-              <button className="edjv-chat-btn-option" onClick={() => handleLocationSelect("depende", step)}>Depende do horário</button>
-              <button className="edjv-chat-btn-option" onClick={() => handleLocationSelect("nao", step)}>É um pouco longe</button>
+              <button className="edjv-chat-btn-option" onClick={() => handleLocationSelect("nao", step)}>Infelizmente não consigo</button>
+              <button className="edjv-chat-btn-back" onClick={() => handleBack(step)}>
+                &larr; Voltar
+              </button>
             </div>
           )}
 
@@ -295,6 +325,9 @@ export function EnrollmentChat({ isOpen, onClose }: EnrollmentChatProps) {
                   Abrir WhatsApp
                 </button>
               )}
+              <button className="edjv-chat-btn-back" onClick={() => handleBack(step)}>
+                &larr; Voltar
+              </button>
               <button className="edjv-chat-btn-option" onClick={onClose}>Fechar Chat</button>
             </div>
           )}

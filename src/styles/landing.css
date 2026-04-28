@@ -1442,6 +1442,25 @@ body {
   cursor: pointer;
 }
 
+.edjv-chat-btn-back {
+  background: transparent;
+  border: 1px solid #ddd;
+  color: #666;
+  padding: 0.6rem;
+  border-radius: 0.8rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: 0.2rem;
+}
+
+.edjv-chat-btn-back:hover {
+  background: #f8f8f8;
+  border-color: #bbb;
+}
+
 /* Typing indicator */
 .typing {
   display: flex;
